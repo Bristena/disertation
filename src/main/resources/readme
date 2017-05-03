@@ -1,0 +1,4 @@
+Test code for haar trained data for speed limit 70 board detection.
+haarr.xml contains training data.
+Created using opencv haar training.
+Test images are attached.
