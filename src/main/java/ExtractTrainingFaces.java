@@ -67,6 +67,68 @@ public class ExtractTrainingFaces {
         return dogUtils;
     }
 
+    public INDArray getCenterPoint(Map<String, INDArray> partMap) {
+        INDArray centerPoint = Nd4j.zeros(2);
+        centerPoint = centerPoint.add(partMap.get("LEFT_EYE"));
+        centerPoint = centerPoint.add(partMap.get("RIGHT_EYE"));
+        centerPoint = centerPoint.add(partMap.get("NOSE"));
+        centerPoint = centerPoint.div(3);
+
+        return centerPoint;
+    }
+
+    public INDArray getCenterPointAlt(Map<String, INDArray> partMap) {
+        INDArray centerPoint = Nd4j.zeros(2);
+        centerPoint = centerPoint.add(partMap.get("LEFT_EYE"));
+        centerPoint = centerPoint.add(partMap.get("RIGHT_EYE"));
+        centerPoint = centerPoint.div(2);
+
+        centerPoint = centerPoint.getColumn(1).add(partMap.get("NOSE").getColumn(1));
+        centerPoint = centerPoint.getColumn(1).div(1);
+
+        return centerPoint;
+    }
+
+    public boolean pointInBox(INDArray point, Box box) {
+
+        if (point.getColumn(0).sumNumber().intValue() < Nd4j.min(box.getBoxCorners().getColumn(0)).sumNumber().intValue()
+                || point.getColumn(0).sumNumber().intValue() > Nd4j.max(box.getBoxCorners().getColumn(0)).sumNumber().intValue()) {
+            return false;
+        } else if (point.getColumn(1).sumNumber().intValue() < Nd4j.min(box.getBoxCorners().getColumn(1)).sumNumber().intValue()
+                || point.getColumn(1).sumNumber().intValue() > Nd4j.max(box.getBoxCorners().getColumn(1)).sumNumber().intValue()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public Box getFaceBox(Map<String, INDArray> parts) {
+        Box box = new Box();
+        INDArray center = getCenterPoint(parts);
+
+        INDArray left_eye = parts.get("LEFT_EYE");
+        INDArray right_eye = parts.get("RIGHT_EYE");
+
+        right_eye = right_eye.getColumn(0).sub(left_eye.getColumn(0));
+        INDArray eye_slope = Nd4j.vstack(right_eye.getColumn(0).sub(left_eye.getColumn(0)), right_eye.getColumn(1).sub(left_eye.getColumn(1)));
+        INDArray eye_slope = eye_slope.div(Nd4j.linspace()) / Nd4j..norm(eye_slope);
+        INDArray eye_norm = Nd4j.create([eye_slope[1] * -1, eye_slope[0]])
+
+        inter_eye_dist = Nd4j.sqrt((left_eye[0] - right_eye[0]) * * 2 + (left_eye[1] - right_eye[1]) **2)
+        dist = inter_eye_dist * FACE_BOX_SCALE / 2
+
+        box_corners = [
+        center + (eye_slope * dist) + (eye_norm * dist),
+                center + (eye_slope * dist) - (eye_norm * dist),
+                center - (eye_slope * dist) - (eye_norm * dist),
+                center - (eye_slope * dist) + (eye_norm * dist),
+            ]
+
+        return np.array(box_corners),eye_slope, inter_eye_dist
+    }
+
+
+
     private List<String> getFilesInDirectory(String path) {
         File folder = new File(path);
         File[] listOfFiles = folder.listFiles();
