@@ -3,7 +3,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 public class Box {
     private INDArray boxCorners;
     private INDArray eyeSlope;
-    private double interEyeDist;
+    private INDArray interEyeDist;
 
     public INDArray getBoxCorners() {
         return boxCorners;
@@ -21,11 +21,11 @@ public class Box {
         this.eyeSlope = eyeSlope;
     }
 
-    public double getInterEyeDist() {
+    public INDArray getInterEyeDist() {
         return interEyeDist;
     }
 
-    public void setInterEyeDist(double interEyeDist) {
+    public void setInterEyeDist(INDArray interEyeDist) {
         this.interEyeDist = interEyeDist;
     }
 }
