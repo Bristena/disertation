@@ -29,7 +29,7 @@ public class ExtractTrainingFaces {
     private static long NUM_NEGATIVE_TRAIN_SAMPLES = 4000;
     private static long NUM_NEGATIVE_TEST_SAMPLES = 3000;
     List<String> files = new ArrayList<String>();
-    private List<Part> parts = new ArrayList<Part>();
+    private List<Part> parts = new ArrayList<>();
 
     {
         Part rightEye = new Part("RIGHT_EYE", 0);
@@ -102,11 +102,14 @@ public class ExtractTrainingFaces {
 
     public boolean pointInBox(INDArray point, Box box) {
 
-        if (point.getColumn(0).sumNumber().floatValue() < Nd4j.min(box.getBoxCorners().getColumn(0)).sumNumber().floatValue()
-                || point.getColumn(0).sumNumber().floatValue() > Nd4j.max(box.getBoxCorners().getColumn(0)).sumNumber().floatValue()) {
+        if ((point.getColumn(0).sumNumber().floatValue() <
+                Nd4j.min(box.getBoxCorners().getColumn(0)).sumNumber().floatValue())
+                || (point.getColumn(0).sumNumber().floatValue() >
+                Nd4j.max(box.getBoxCorners().getColumn(0)).sumNumber().floatValue())) {
             return false;
-        } else if (point.getColumn(1).sumNumber().floatValue() < Nd4j.min(box.getBoxCorners().getColumn(1)).sumNumber().floatValue()
-                || point.getColumn(1).sumNumber().floatValue() > Nd4j.max(box.getBoxCorners().getColumn(1)).sumNumber().floatValue()) {
+        } else if ((point.getColumn(1).sumNumber().floatValue() <
+                Nd4j.min(box.getBoxCorners().getColumn(1)).sumNumber().floatValue())
+                || (point.getColumn(1).sumNumber().floatValue() > Nd4j.max(box.getBoxCorners().getColumn(1)).sumNumber().floatValue())) {
             return false;
         }
 
@@ -121,7 +124,8 @@ public class ExtractTrainingFaces {
         INDArray right_eye = parts.get("RIGHT_EYE");
 
         //	eye_slope = np.array([right_eye[0] - left_eye[0], right_eye[1] - left_eye[1]])
-        INDArray eye_slope = Nd4j.hstack(right_eye.getColumn(0).sub(left_eye.getColumn(0)),
+        INDArray eye_slope = Nd4j.hstack(right_eye.getColumn(0)
+                        .sub(left_eye.getColumn(0)),
                 right_eye.getColumn(1).sub(left_eye.getColumn(1)));
 //        eye_slope = eye_slope / np.linalg.norm(eye_slope)
         eye_slope = eye_slope.div(Nd4j.norm2(eye_slope));
@@ -138,7 +142,7 @@ public class ExtractTrainingFaces {
         INDArray[] box_corners = {
                 center.add(eye_slope.mul(dist)).add(eye_norm.mul(dist)),
                 center.add(eye_slope.mul(dist)).sub(eye_norm.mul(dist)),
-                center.sub((eye_slope.mul(dist)).sub(eye_norm.mul(dist))),
+                center.sub(eye_slope.mul(dist)).sub(eye_norm.mul(dist)),
                 center.sub(eye_slope.mul(dist)).add(eye_norm.mul(dist)),
         };
 
@@ -161,8 +165,8 @@ public class ExtractTrainingFaces {
             slope = slope.div(Nd4j.norm2(slope));
             INDArray norm = Nd4j.create(new double[]{slope.getColumn(1).mul(-1).sumNumber().doubleValue(),
                     slope.getColumn(0).sumNumber().doubleValue()});
-            int Low = 10;
-            int High = 100;
+            int Low = 64;
+            int High = 128;
             int dist = random.nextInt(High - Low) + Low;
 
 
@@ -213,19 +217,18 @@ public class ExtractTrainingFaces {
         List<KeyPoint> keypoints = new ArrayList<>();
         INDArray slope = box.getEyeSlope();
         double dist = box.getInterEyeDist();
-        INDArray norm = Nd4j.hstack(slope.getColumn(1).mul(-1), slope.getColumn(1));
+        INDArray norm = Nd4j.hstack(slope.getColumn(1).mul(-1), slope.getColumn(0));
         INDArray center = Nd4j.sum(box.getBoxCorners(), 0).div(4);
-        INDArray nose = center.sub((norm.mul(dist).div(2)));
+        INDArray nose = center.sub(norm.mul(dist).div(2));
         INDArray forehead = center.add(norm.mul(dist).div(3));
         INDArray left_eye = forehead.sub(slope.mul(dist).div(FACE_BOX_SCALE));
         INDArray right_eye = forehead.add(slope.mul(dist).div(FACE_BOX_SCALE));
 
-        double nose_scale = dist;
         double eye_scale = dist / FACE_BOX_SCALE;
         double angle = (180 - Math.atan2(norm.getColumn(0).sumNumber().doubleValue(), norm.getColumn(1).sumNumber().doubleValue()) * 180 / Math.PI) % 360;
 
         keypoints.add(new KeyPoint(nose.getColumn(0).sumNumber().floatValue(),
-                nose.getColumn(1).sumNumber().floatValue(), (float) nose_scale, (float) angle));
+                nose.getColumn(1).sumNumber().floatValue(), (float) dist, (float) angle));
         keypoints.add(new KeyPoint(forehead.getColumn(0).sumNumber().floatValue(), forehead.getColumn(1).sumNumber().floatValue(),
                 (float) eye_scale, (float) angle));
         keypoints.add(new KeyPoint(left_eye.getColumn(0).sumNumber().floatValue(), left_eye.getColumn(1).sumNumber().floatValue(),
