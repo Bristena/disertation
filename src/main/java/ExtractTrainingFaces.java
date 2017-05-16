@@ -1,18 +1,14 @@
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.rng.Random;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.shade.jackson.core.JsonFactory;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.Scalar;
 import org.opencv.features2d.DescriptorExtractor;
-import org.opencv.features2d.FeatureDetector;
 import org.opencv.features2d.Features2d;
 import org.opencv.features2d.KeyPoint;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -106,11 +102,11 @@ public class ExtractTrainingFaces {
 
     public boolean pointInBox(INDArray point, Box box) {
 
-        if (point.getColumn(0).sumNumber().intValue() < Nd4j.min(box.getBoxCorners().getColumn(0)).sumNumber().intValue()
-                || point.getColumn(0).sumNumber().intValue() > Nd4j.max(box.getBoxCorners().getColumn(0)).sumNumber().intValue()) {
+        if (point.getColumn(0).sumNumber().floatValue() < Nd4j.min(box.getBoxCorners().getColumn(0)).sumNumber().floatValue()
+                || point.getColumn(0).sumNumber().floatValue() > Nd4j.max(box.getBoxCorners().getColumn(0)).sumNumber().floatValue()) {
             return false;
-        } else if (point.getColumn(1).sumNumber().intValue() < Nd4j.min(box.getBoxCorners().getColumn(1)).sumNumber().intValue()
-                || point.getColumn(1).sumNumber().intValue() > Nd4j.max(box.getBoxCorners().getColumn(1)).sumNumber().intValue()) {
+        } else if (point.getColumn(1).sumNumber().floatValue() < Nd4j.min(box.getBoxCorners().getColumn(1)).sumNumber().floatValue()
+                || point.getColumn(1).sumNumber().floatValue() > Nd4j.max(box.getBoxCorners().getColumn(1)).sumNumber().floatValue()) {
             return false;
         }
 
@@ -128,14 +124,15 @@ public class ExtractTrainingFaces {
         INDArray eye_slope = Nd4j.hstack(right_eye.getColumn(0).sub(left_eye.getColumn(0)),
                 right_eye.getColumn(1).sub(left_eye.getColumn(1)));
 //        eye_slope = eye_slope / np.linalg.norm(eye_slope)
-        eye_slope = eye_slope.div(Nd4j.norm1(eye_slope));
+        eye_slope = eye_slope.div(Nd4j.norm2(eye_slope));
         //	eye_norm = np.array([eye_slope[1] * -1, eye_slope[0]])
         INDArray eye_norm = Nd4j.hstack(eye_slope.getColumn(1).mul(-1), eye_slope.getColumn(0));
 
 //        inter_eye_dist = np.sqrt((left_eye[0] - right_eye[0]) ** 2 + (left_eye[1] - right_eye[1]) ** 2)
-        double inter_eye_dist = Math.sqrt(Math.pow(left_eye.getColumn(0).sumNumber().doubleValue()
-                - right_eye.getColumn(0).sumNumber().doubleValue(), 2) +
-                (Math.pow(left_eye.getColumn(1).sumNumber().doubleValue() - right_eye.getColumn(1).sumNumber().doubleValue(), 2)));
+        double inter_eye_dist = Math.sqrt(
+                Math.pow(left_eye.getColumn(0).sub(right_eye.getColumn(0)).sumNumber().doubleValue(), 2) +
+                (Math.pow(left_eye.getColumn(1).sub(right_eye.getColumn(1)).sumNumber().doubleValue(), 2))
+        );
         double dist = inter_eye_dist * FACE_BOX_SCALE / 2;
 
         INDArray[] box_corners = {
@@ -161,7 +158,7 @@ public class ExtractTrainingFaces {
             int colsRandom = random.nextInt(image.cols());
             INDArray center = Nd4j.create(new double[]{(double) rowsRandom, (double) colsRandom});
             INDArray slope = Nd4j.create(new double[]{random.nextInt(100), random.nextInt(100)});
-            slope = slope.div(Nd4j.norm1(slope));
+            slope = slope.div(Nd4j.norm2(slope));
             INDArray norm = Nd4j.create(new double[]{slope.getColumn(1).mul(-1).sumNumber().doubleValue(),
                     slope.getColumn(0).sumNumber().doubleValue()});
             int Low = 10;
