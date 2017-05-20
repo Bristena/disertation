@@ -72,7 +72,7 @@ public class ExtractTrainingFaces {
             partMap.put(part.getPart(), partLocations.get(part.getPosition()));
         }
 
-        INDArray ndArray = Nd4j.hstack(partLocations);
+        INDArray ndArray = Nd4j.vstack(partLocations);
         dogUtils.setArray(ndArray);
         dogUtils.setPartMap(partMap);
         return dogUtils;
@@ -135,7 +135,7 @@ public class ExtractTrainingFaces {
 //        inter_eye_dist = np.sqrt((left_eye[0] - right_eye[0]) ** 2 + (left_eye[1] - right_eye[1]) ** 2)
         double inter_eye_dist = Math.sqrt(
                 Math.pow(left_eye.getColumn(0).sub(right_eye.getColumn(0)).sumNumber().doubleValue(), 2) +
-                (Math.pow(left_eye.getColumn(1).sub(right_eye.getColumn(1)).sumNumber().doubleValue(), 2))
+                        (Math.pow(left_eye.getColumn(1).sub(right_eye.getColumn(1)).sumNumber().doubleValue(), 2))
         );
         double dist = inter_eye_dist * FACE_BOX_SCALE / 2;
 
@@ -188,16 +188,9 @@ public class ExtractTrainingFaces {
     }
 
 
-    public List<String> getTrainingList() {
-        List<String> train_images = readFromFile("path-ul catre training file");
-        return train_images;
+    public List<String> getFiles(String path) {
+        return readFromFile(path);
     }
-
-    public List<String> getTestingList() {
-        List<String> test_images = readFromFile("path-ul catre test file");
-        return test_images;
-    }
-
 
     private List<String> getFilesInDirectory(String path) {
         File folder = new File(path);
@@ -251,31 +244,24 @@ public class ExtractTrainingFaces {
         return list;
     }
 
-    public void extractFeatures(Mat image, Box box) {
+    public Mat extractFeatures(Mat image, Box box) {
         List<KeyPoint> keyPoints = getKeypoints(image, box);
         MatOfKeyPoint matOfKeyPoint = new MatOfKeyPoint();
         matOfKeyPoint.fromArray(keyPoints.toArray(new KeyPoint[]{}));
         Mat grayscale = new Mat();
         Imgproc.cvtColor(image, grayscale, COLOR_BGR2GRAY);
         DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SIFT);
-        Mat outputImage = new Mat(image.rows(), image.cols(), Highgui.CV_LOAD_IMAGE_COLOR);
         MatOfKeyPoint objectDescriptors = new MatOfKeyPoint();
         descriptorExtractor.compute(grayscale, matOfKeyPoint, objectDescriptors);
         Scalar newKeypointColor = new Scalar(255, 0, 0);
+        Mat outputImage = new Mat(image.rows(), image.cols(), Highgui.CV_LOAD_IMAGE_COLOR);
         Features2d.drawKeypoints(grayscale, matOfKeyPoint, outputImage, newKeypointColor, 0);
         imwrite("keypoint_test.jpg", outputImage);
+        Mat a = objectDescriptors.reshape(objectDescriptors.cols() * objectDescriptors.rows());
+        //        INDArray indArray = Nd4j.vstack(keyPointsFromDescriptors[1],keyPointsFromDescriptors[1] * keyPointsFromDescriptors[1])
+        return a;
     }
 
-
-//    def extract_features(image, box, slope, dist):
-//    grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-//    sift = cv2.SIFT()
-//
-//    keypoints = get_keypoints(image, box, slope, dist)
-//    features = sift.compute(grayscale, keypoints)
-//
-//    kpimg = cv2.drawKeypoints(grayscale, keypoints, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-//            cv2.imwrite('keypoint_test.jpg', kpimg)
 //
 //            return np.reshape(features[1], features[1].shape[0] * features[1].shape[1])
 }
