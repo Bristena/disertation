@@ -23,11 +23,8 @@ import static org.opencv.imgproc.Imgproc.COLOR_BGR2GRAY;
 
 
 public class ExtractTrainingFaces {
-    private static final String IMAGE_PREFIX = "CU_Dogs/dogImages";
-    private static final String POINT_PREFIX = "CU_Dogs/dogParts/{}.txt";
     private static double FACE_BOX_SCALE = 4.0;
-    private static long NUM_NEGATIVE_TRAIN_SAMPLES = 4000;
-    private static long NUM_NEGATIVE_TEST_SAMPLES = 3000;
+
     List<String> files = new ArrayList<String>();
     private List<Part> parts = new ArrayList<>();
 
@@ -244,7 +241,7 @@ public class ExtractTrainingFaces {
         return list;
     }
 
-    public Mat extractFeatures(Mat image, Box box) {
+    public INDArray extractFeatures(Mat image, Box box) {
         List<KeyPoint> keyPoints = getKeypoints(image, box);
         MatOfKeyPoint matOfKeyPoint = new MatOfKeyPoint();
         matOfKeyPoint.fromArray(keyPoints.toArray(new KeyPoint[]{}));
@@ -255,11 +252,22 @@ public class ExtractTrainingFaces {
         descriptorExtractor.compute(grayscale, matOfKeyPoint, objectDescriptors);
         Scalar newKeypointColor = new Scalar(255, 0, 0);
         Mat outputImage = new Mat(image.rows(), image.cols(), Highgui.CV_LOAD_IMAGE_COLOR);
-        Features2d.drawKeypoints(grayscale, matOfKeyPoint, outputImage, newKeypointColor, 0);
+        Features2d.drawKeypoints(grayscale, matOfKeyPoint, outputImage, newKeypointColor, 4);
         imwrite("keypoint_test.jpg", outputImage);
+        INDArray matrice = Nd4j.create(4, 128);
+        for (int row = 0; row < 4; row++) {
+            for (int col = 0; col < 128; col++) {
+                int[] indice = {row, col};
+                matrice.putScalar(indice, objectDescriptors.get(row, col)[0]);
+            }
+        }
+        System.out.println(matrice);
+
+
         Mat a = objectDescriptors.reshape(objectDescriptors.cols() * objectDescriptors.rows());
         //        INDArray indArray = Nd4j.vstack(keyPointsFromDescriptors[1],keyPointsFromDescriptors[1] * keyPointsFromDescriptors[1])
-        return a;
+//       INDArray indArray = Nd4j.c
+        return matrice;
     }
 
 //
