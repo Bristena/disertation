@@ -23,9 +23,9 @@ public class LoadData {
         INDArray x = Nd4j.zeros(imageList.size(), num_channels, image_size, image_size);
         INDArray y = Nd4j.zeros(imageList.size(), 16);
 
-        for (int i = 0; i < imageList.size(); i++) {
+        for (int ind = 0; ind < imageList.size(); ind++) {
             Mat img = Highgui
-                    .imread(imageList.get(i));
+                    .imread(imageList.get(ind));
             Size originalSize = img.size();
             Mat resizedImage = new Mat();
             Size sz = new Size(image_size, image_size);
@@ -33,8 +33,16 @@ public class LoadData {
             Core.multiply(resizedImage, new Scalar(1.0), resizedImage);
             Core.divide(resizedImage, new Scalar(255), resizedImage);
             Core.transpose(resizedImage, resizedImage);
-            x.getColumn(i).add((INDArray) img);
+            for (int j = 0; j < x.size(1); j++) {
+                for (int k = 0; k < x.size(2); k++) {
+                    for (int q = 0; q < x.size(3); q++) {
+                        int[] index = {ind, j, k, q};
+                        x.putScalar(index, (float) resizedImage.get(k, q)[j]); //add pixels and channel
+                    }
+                }
+            }
         }
+        System.out.println(x);
 
 //        img = imresize(img, (IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)) * 1.0 / 255
 //        img = img.transpose((2, 1, 0))

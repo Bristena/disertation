@@ -268,4 +268,12 @@ public class ExtractTrainingFaces {
         }
         return matrice;
     }
+
+    public List<String> getCompletePath(String path, List<String> paths) {
+        List<String> completePaths = new ArrayList<>();
+        for (String s : paths) {
+            completePaths.add(path + s);
+        }
+        return completePaths;
+    }
 }
