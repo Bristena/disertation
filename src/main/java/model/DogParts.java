@@ -1,8 +1,10 @@
+package model;
+
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 import java.util.Map;
 
-public class DogUtils {
+public class DogParts {
     private Map<String, INDArray> partMap;
     private INDArray array;
 

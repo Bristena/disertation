@@ -1,3 +1,5 @@
+package model;
+
 public class Part {
     private String part;
     private int position;

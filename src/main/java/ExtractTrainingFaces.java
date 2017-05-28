@@ -1,3 +1,6 @@
+import model.Box;
+import model.DogParts;
+import model.Part;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.opencv.core.Mat;
@@ -47,8 +50,8 @@ public class ExtractTrainingFaces {
         parts.add(leftEarTip);
     }
 
-    public DogUtils loadDog(String pathToDog) {
-        DogUtils dogUtils = new DogUtils();
+    public DogParts loadDog(String pathToDog) {
+        DogParts dogParts = new DogParts();
         List<INDArray> partLocations = new ArrayList<>();
         try {
             BufferedReader b = new BufferedReader(new FileReader(pathToDog));
@@ -70,9 +73,9 @@ public class ExtractTrainingFaces {
         }
 
         INDArray ndArray = Nd4j.vstack(partLocations);
-        dogUtils.setArray(ndArray);
-        dogUtils.setPartMap(partMap);
-        return dogUtils;
+        dogParts.setArray(ndArray);
+        dogParts.setPartMap(partMap);
+        return dogParts;
     }
 
     public INDArray getCenterPoint(Map<String, INDArray> partMap) {
@@ -254,22 +257,15 @@ public class ExtractTrainingFaces {
         Mat outputImage = new Mat(image.rows(), image.cols(), Highgui.CV_LOAD_IMAGE_COLOR);
         Features2d.drawKeypoints(grayscale, matOfKeyPoint, outputImage, newKeypointColor, 4);
         imwrite("keypoint_test.jpg", outputImage);
-        INDArray matrice = Nd4j.create(4, 128);
+        INDArray matrice = Nd4j.create(1, 512);
+        int index = 0;
         for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 128; col++) {
-                int[] indice = {row, col};
+                int[] indice = {0, index};
                 matrice.putScalar(indice, objectDescriptors.get(row, col)[0]);
+                index++;
             }
         }
-        System.out.println(matrice);
-
-
-        Mat a = objectDescriptors.reshape(objectDescriptors.cols() * objectDescriptors.rows());
-        //        INDArray indArray = Nd4j.vstack(keyPointsFromDescriptors[1],keyPointsFromDescriptors[1] * keyPointsFromDescriptors[1])
-//       INDArray indArray = Nd4j.c
         return matrice;
     }
-
-//
-//            return np.reshape(features[1], features[1].shape[0] * features[1].shape[1])
 }

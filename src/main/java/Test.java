@@ -1,3 +1,5 @@
+import model.Box;
+import model.DogParts;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -10,11 +12,12 @@ public class Test {
         //facial detection
         ExtractTrainingFaces extractTrainingFaces = new ExtractTrainingFaces();
         Mat image = Highgui
-                .imread("D:\\School\\CU_Dogs/dogImages/002.Afghan_hound/Afghan_hound_00125.jpg");
-        DogUtils dogUtils = extractTrainingFaces.loadDog("D:\\School/CU_Dogs/dogParts/002.Afghan_hound/Afghan_hound_00125.txt");
-        Box box = extractTrainingFaces.getFaceBox(dogUtils.getPartMap());
+                .imread("E:\\CU_Dogs/dogImages/002.Afghan_hound/Afghan_hound_00125.jpg");
+        DogParts dogParts = extractTrainingFaces.loadDog("E:/CU_Dogs/dogParts/002.Afghan_hound/Afghan_hound_00125.txt");
+        Box box = extractTrainingFaces.getFaceBox(dogParts.getPartMap());
         INDArray a = extractTrainingFaces.extractFeatures(image, box);
 
-        System.out.println(a);
+        SvmFacialKeyPoints svmFacialKeyPoints = new SvmFacialKeyPoints();
+        svmFacialKeyPoints.run();
     }
 }
