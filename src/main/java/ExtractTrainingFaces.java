@@ -13,7 +13,6 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,8 +26,6 @@ import static org.opencv.imgproc.Imgproc.COLOR_BGR2GRAY;
 
 public class ExtractTrainingFaces {
     private static double FACE_BOX_SCALE = 4.0;
-
-    List<String> files = new ArrayList<String>();
     private List<Part> parts = new ArrayList<>();
 
     {
@@ -51,6 +48,10 @@ public class ExtractTrainingFaces {
     }
 
     public DogParts loadDog(String pathToDog) {
+        if (pathToDog.contains("dogImages")) {
+            pathToDog = pathToDog.replace("dogImages", "dogParts");
+            pathToDog = pathToDog.replace("jpg", "txt");
+        }
         DogParts dogParts = new DogParts();
         List<INDArray> partLocations = new ArrayList<>();
         try {
@@ -122,23 +123,16 @@ public class ExtractTrainingFaces {
 
         INDArray left_eye = parts.get("LEFT_EYE");
         INDArray right_eye = parts.get("RIGHT_EYE");
-
-        //	eye_slope = np.array([right_eye[0] - left_eye[0], right_eye[1] - left_eye[1]])
         INDArray eye_slope = Nd4j.hstack(right_eye.getColumn(0)
                         .sub(left_eye.getColumn(0)),
                 right_eye.getColumn(1).sub(left_eye.getColumn(1)));
-//        eye_slope = eye_slope / np.linalg.norm(eye_slope)
         eye_slope = eye_slope.div(Nd4j.norm2(eye_slope));
-        //	eye_norm = np.array([eye_slope[1] * -1, eye_slope[0]])
         INDArray eye_norm = Nd4j.hstack(eye_slope.getColumn(1).mul(-1), eye_slope.getColumn(0));
-
-//        inter_eye_dist = np.sqrt((left_eye[0] - right_eye[0]) ** 2 + (left_eye[1] - right_eye[1]) ** 2)
         double inter_eye_dist = Math.sqrt(
                 Math.pow(left_eye.getColumn(0).sub(right_eye.getColumn(0)).sumNumber().doubleValue(), 2) +
                         (Math.pow(left_eye.getColumn(1).sub(right_eye.getColumn(1)).sumNumber().doubleValue(), 2))
         );
         double dist = inter_eye_dist * FACE_BOX_SCALE / 2;
-
         INDArray[] box_corners = {
                 center.add(eye_slope.mul(dist)).add(eye_norm.mul(dist)),
                 center.add(eye_slope.mul(dist)).sub(eye_norm.mul(dist)),
@@ -191,20 +185,6 @@ public class ExtractTrainingFaces {
     public List<String> getFiles(String path) {
         return readFromFile(path);
     }
-
-    private List<String> getFilesInDirectory(String path) {
-        File folder = new File(path);
-        File[] listOfFiles = folder.listFiles();
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].isFile()) {
-                files.add(listOfFiles[i].getAbsolutePath());
-            } else if (listOfFiles[i].isDirectory()) {
-                getFilesInDirectory(listOfFiles[i].getPath());
-            }
-        }
-        return files;
-    }
-
 
     public List<KeyPoint> getKeypoints(Mat image, Box box) {
         List<KeyPoint> keypoints = new ArrayList<>();
