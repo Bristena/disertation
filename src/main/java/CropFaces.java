@@ -12,12 +12,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.opencv.highgui.Highgui.imwrite;
+
 public class CropFaces {
 
     private int CROP_SIZE = 64;
     private int NUM_CHANNELS = 3;
     private int NUM_RAND_CROPS = 6;
     private int image_size = 128;
+    private String dir = "D:\\School\\croppedImages\\";
 
     public INDArray cropBox(String dogPath, Box boundingBox) {
 //        Mat img = Highgui.imread(dogPath);
@@ -95,19 +98,28 @@ public class CropFaces {
     public void writeCroopedFaces(List<String> fileList, INDArray x, String outputDir) throws Exception {
         UtilSaveLoadMultiLayerNetwork utilSaveLoadMultiLayerNetwork = new UtilSaveLoadMultiLayerNetwork();
         MultiLayerNetwork network = utilSaveLoadMultiLayerNetwork.load("");
-        int yPredict[] = network.predict(x);
+        ExtractTrainingFaces extractTrainingFaces = new ExtractTrainingFaces();
+        INDArray yPredict = network.output(x);
         //partea de reshape
         for (int i = 0; i < fileList.size(); i++) {
             if (i % 100 == 0) {
                 System.out.println("cropped - " + i);
             }
-            INDArray img = x.getColumn(i).transpose();
             int scale = image_size / 2;
-            Map<String, INDArray> predPoints = new HashMap<>();
-            predPoints.put("RIGHT_EYE", Nd4j.create(yPredict[i] * scale + scale));
-
+            Map<String, INDArray> predPoints = new HashMap<>(); //aici sigur nu ii ok
+//            predPoints.put("RIGHT_EYE", Nd4j.create(yPredict.getInt(new int[]{i,0}) * scale + scale));
+//            predPoints.put("LEFT_EYE", Nd4j.create(yPredict[i] * scale + scale));
+//            predPoints.put("NOSE", Nd4j.create(yPredict[i] * scale + scale));
+            Box box = extractTrainingFaces.getFaceBox(predPoints);
+            INDArray cropedImages = cropBox(fileList.get(i), box);
+            if (cropedImages != null) {
+                for (int j = 0; j < NUM_RAND_CROPS; j++) {
+                    String cropFileName = dir + "c_" + i + fileList.get(i);
+                    Mat outputImage = new Mat(cropedImages.rows(), cropedImages.columns(), Highgui.CV_LOAD_IMAGE_COLOR);
+                    imwrite(cropFileName, outputImage);
+                }
+            }
         }
-
     }
 
     public Mat rotate(Mat src, double angle) {
@@ -118,35 +130,4 @@ public class CropFaces {
         Imgproc.warpAffine(src, dst, r, new Size(src.cols(), src.rows()));
         return dst;
     }
-
-    /*
-def write_cropped_faces(file_list, X, output_dir):
-	network = load_model(CURRENT_MODEL)
-	y_pred = network.predict(X)
-	y_pred = np.reshape(y_pred, (y_pred.shape[0], y_pred.shape[1] / 2, 2))
-
-	for i, dog_file in enumerate(file_list):
-		if i % 100 == 0: print '{} / {} CROPPED...'.format(i, len(file_list))
-
-		img = X[i].transpose((2,1,0))
-
-		scale = IMAGE_SIZE / 2
-		pred_points = {
-			'RIGHT_EYE': y_pred[i, 0, :] * scale + scale,
-			'LEFT_EYE': y_pred[i, 1, :] * scale + scale,
-			'NOSE': y_pred[i, 2, :] * scale + scale,
-		}
-
-		corners, slope, distance = get_face_box(pred_points)
-		cropped_imgs = crop_box(dog_file, corners, slope)
-
-		if cropped_imgs == None:
-			continue
-
-		for i in xrange(NUM_RAND_CROPS):
-			crop_file = 'c_' + str(int(dog_file[:3])) + '_' + dog_file.split('/')[1] + str(i)
-			imsave(output_dir.format(crop_file), cropped_imgs[i])
-
-
-     */
 }

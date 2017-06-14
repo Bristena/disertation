@@ -16,7 +16,7 @@ public class UtilSaveLoadMultiLayerNetwork {
         boolean saveUpdater = true;                                             //Updater: i.e., the state for Momentum, RMSProp, Adagrad etc. Save this if you want to train your network more in the future
         ModelSerializer.writeModel(net, locationToSave, saveUpdater);
 //        logger.warn("saved params: " + net.params());
-        logger.warn("saved params");
+//        logger.warn("saved params");
     }
 
     public MultiLayerNetwork load(String filename) throws Exception {

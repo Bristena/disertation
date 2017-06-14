@@ -25,6 +25,7 @@ import static org.opencv.imgproc.Imgproc.COLOR_BGR2GRAY;
 
 
 public class ExtractTrainingFaces {
+    private final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ExtractTrainingFaces.class);
     private static double FACE_BOX_SCALE = 4.0;
     private List<Part> parts = new ArrayList<>();
 
