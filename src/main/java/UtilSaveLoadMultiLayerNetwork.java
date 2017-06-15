@@ -22,10 +22,9 @@ public class UtilSaveLoadMultiLayerNetwork {
     public MultiLayerNetwork load(String filename) throws Exception {
         //Load the model
         File locationToSave = new File(filename);      //Where to save the network. Note: the file is in .zip format - can be opened externally
-        MultiLayerNetwork restored = ModelSerializer.restoreMultiLayerNetwork(locationToSave);
 
 //        logger.warn("loaded params:      " + restored.params());
-        return restored;
+        return ModelSerializer.restoreMultiLayerNetwork(locationToSave);
     }
 
 }

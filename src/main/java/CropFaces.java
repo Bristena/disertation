@@ -2,6 +2,7 @@ import model.Box;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
@@ -95,21 +96,24 @@ public class CropFaces {
     }
 
 
-    public void writeCroopedFaces(List<String> fileList, INDArray x, String outputDir) throws Exception {
+    public void writeCroopedFaces(List<String> fileList, INDArray x) throws Exception {
         UtilSaveLoadMultiLayerNetwork utilSaveLoadMultiLayerNetwork = new UtilSaveLoadMultiLayerNetwork();
-        MultiLayerNetwork network = utilSaveLoadMultiLayerNetwork.load("");
+        MultiLayerNetwork network = utilSaveLoadMultiLayerNetwork.load("D:\\train.bin");
         ExtractTrainingFaces extractTrainingFaces = new ExtractTrainingFaces();
-        INDArray yPredict = network.output(x);
-        //partea de reshape
+        int test[] = network.predict(x);
+        INDArray yPredict;
+        yPredict = network.output(x, false);
+        yPredict = yPredict.reshape(yPredict.size(0), (yPredict.size(1) / 2), 2);
         for (int i = 0; i < fileList.size(); i++) {
             if (i % 100 == 0) {
                 System.out.println("cropped - " + i);
             }
             int scale = image_size / 2;
-            Map<String, INDArray> predPoints = new HashMap<>(); //aici sigur nu ii ok
-//            predPoints.put("RIGHT_EYE", Nd4j.create(yPredict.getInt(new int[]{i,0}) * scale + scale));
-//            predPoints.put("LEFT_EYE", Nd4j.create(yPredict[i] * scale + scale));
-//            predPoints.put("NOSE", Nd4j.create(yPredict[i] * scale + scale));
+            Map<String, INDArray> predPoints = new HashMap<>();
+            //aici sigur nu ii ok
+            predPoints.put("RIGHT_EYE", yPredict.get(NDArrayIndex.point(i), NDArrayIndex.point(0), NDArrayIndex.all()).mul(scale).add(scale).transpose());
+            predPoints.put("LEFT_EYE", yPredict.get(NDArrayIndex.point(i), NDArrayIndex.point(1), NDArrayIndex.all()).mul(scale).add(scale).transpose());
+            predPoints.put("NOSE", yPredict.get(NDArrayIndex.point(i), NDArrayIndex.point(2), NDArrayIndex.all()).mul(scale).add(scale).transpose());
             Box box = extractTrainingFaces.getFaceBox(predPoints);
             INDArray cropedImages = cropBox(fileList.get(i), box);
             if (cropedImages != null) {

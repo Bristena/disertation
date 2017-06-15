@@ -27,14 +27,10 @@ public class Test {
         long seed = System.nanoTime();
         Collections.shuffle(testingList, new Random(seed));
         Collections.shuffle(trainingList, new Random(seed));
-        for (int i = 800; i < testingList.size(); i++) {
-            trainingList.add(testingList.get(i));
+        for (int i = 0; i < 2000; i++) {
+            test.add(trainingList.get(i));
         }
-        Data train = loadData.loadData(trainingList);
-//        INDArray x = train.getX();
-//        for (int i = 0; i < x.size(0); i++) {
-//            System.out.println(x.getFloat(new int[]{i, 0, 0, 0}));
-//        }
+        Data train = loadData.loadData(test);
         try {
             loadData.trainConvNetwork(train, "train.bin");
         } catch (Exception e) {

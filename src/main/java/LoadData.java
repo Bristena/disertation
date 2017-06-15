@@ -98,13 +98,12 @@ public class LoadData {
     }
 
     public MultiLayerNetwork trainConvNetwork(final Data data, String filename) throws Exception {
-        int outputNum = 16;
-        int batch = 160;
+        int batch = 100;
         int iterations = data.getX().size(0) / batch + 1;
         int epochs = 600;
         logger.warn("Building model");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-                .iterations(iterations)
+//                .iterations(iterations)
                 .updater(Updater.NESTEROVS).momentum(0.9)
                 .activation(Activation.RELU)
                 .weightInit(WeightInit.XAVIER)
@@ -133,10 +132,8 @@ public class LoadData {
                 .build();
 
         MultiLayerNetwork model = new MultiLayerNetwork(conf);
-
+        System.out.println(iterations);
         DataSet dataSet = new DataSet(data.getX(), data.getY());
-        //List<DataSet> dataSets = dataSet.batchBy(batch);
-        //Iterator<DataSet> iterator = dataSets.iterator();
         IteratorDataSetIterator iterator = new IteratorDataSetIterator(dataSet.iterator(), batch);
 
         model.init();
@@ -146,7 +143,7 @@ public class LoadData {
         UtilSaveLoadMultiLayerNetwork uslmln = new UtilSaveLoadMultiLayerNetwork();
         for (int i = 0; i < epochs; i++) {
             logger.warn("Started epoch " + i);
-            //Initialize the user interface backend
+//            //Initialize the user interface backend
             UIServer uiServer = UIServer.getInstance();
 
             //Configure where the network information (gradients, score vs. time etc) is to be stored. Here: store in memory.
