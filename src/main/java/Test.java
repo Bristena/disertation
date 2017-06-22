@@ -27,12 +27,12 @@ public class Test {
         long seed = System.nanoTime();
         Collections.shuffle(testingList, new Random(seed));
         Collections.shuffle(trainingList, new Random(seed));
-        for (int i = 0; i < 2000; i++) {
-            test.add(trainingList.get(i));
-        }
-        Data train = loadData.loadData(test);
+//        for (int i = 800; i < testingList.size(); i++) {
+//            trainingList.add(trainingList.get(i));
+//        }
+        Data train = loadData.loadData(trainingList);
         try {
-            loadData.trainConvNetwork(train, "train.bin");
+            loadData.trainConvNetwork(train, "train.zip");
         } catch (Exception e) {
             e.printStackTrace();
         }

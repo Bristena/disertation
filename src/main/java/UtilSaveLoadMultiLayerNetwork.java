@@ -9,21 +9,14 @@ public class UtilSaveLoadMultiLayerNetwork {
 
 
     public void save(MultiLayerNetwork net, String filename) throws Exception {
-//        MultiLayerNetwork net = new MultiLayerNetwork(conf);
         net.init();
-        //Save the model
-        File locationToSave = new File(filename);      //Where to save the network. Note: the file is in .zip format - can be opened externally
-        boolean saveUpdater = true;                                             //Updater: i.e., the state for Momentum, RMSProp, Adagrad etc. Save this if you want to train your network more in the future
+        File locationToSave = new File(filename);
+        boolean saveUpdater = true;
         ModelSerializer.writeModel(net, locationToSave, saveUpdater);
-//        logger.warn("saved params: " + net.params());
-//        logger.warn("saved params");
     }
 
     public MultiLayerNetwork load(String filename) throws Exception {
-        //Load the model
-        File locationToSave = new File(filename);      //Where to save the network. Note: the file is in .zip format - can be opened externally
-
-//        logger.warn("loaded params:      " + restored.params());
+        File locationToSave = new File(filename);
         return ModelSerializer.restoreMultiLayerNetwork(locationToSave);
     }
 

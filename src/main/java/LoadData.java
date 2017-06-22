@@ -1,7 +1,6 @@
 import model.Data;
 import model.DogParts;
 import org.apache.log4j.Logger;
-import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.datasets.iterator.IteratorDataSetIterator;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
@@ -15,22 +14,19 @@ import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
-import org.deeplearning4j.ui.api.UIServer;
-import org.deeplearning4j.ui.stats.StatsListener;
-import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
+import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.List;
-
-import static org.opencv.core.Core.transpose;
 
 public class LoadData {
     private final static Logger logger = Logger.getLogger(LoadData.class);
@@ -50,15 +46,22 @@ public class LoadData {
             Mat originalImage = Highgui
                     .imread(filename.replace("txt", "jpg").replace("dogParts", "dogImages"));
             Size originalSize = originalImage.size();
-            Mat resizedImage = new Mat(image_size, image_size, num_channels);
-            Imgproc.resize(originalImage, resizedImage, resizedImage.size());
+            Mat resizedImage = new Mat(image_size, image_size, CvType.CV_8UC1);
+            Imgproc.resize(originalImage, resizedImage, new Size(image_size, image_size));
 //            divide(resizedImage, new Scalar(1.0 / 255.0), resizedImage);
-            transpose(resizedImage, resizedImage);
+//            Core.transpose(resizedImage, resizedImage);
             for (int j = 0; j < x.size(1); j++) {
                 for (int k = 0; k < x.size(2); k++) {
                     for (int q = 0; q < x.size(3); q++) {
                         int[] index = {ind, j, k, q};
-                        x.putScalar(index, (float) (resizedImage.get(k, q)[j] * 1.0 / 255.0)); //add pixels and channel
+                        int colorIndex = 0;
+                        if (j == 0) {
+                            colorIndex = 2;
+                        }
+                        if (j == 2) {
+                            colorIndex = 0;
+                        }
+                        x.putScalar(index, (float) (resizedImage.get(k, q)[colorIndex] * 1.0 / 255.0)); //add pixels and channel
                     }
                 }
             }
@@ -99,18 +102,18 @@ public class LoadData {
 
     public MultiLayerNetwork trainConvNetwork(final Data data, String filename) throws Exception {
         int batch = 100;
-        int iterations = data.getX().size(0) / batch + 1;
-        int epochs = 600;
+        int epochs = 50;
         logger.warn("Building model");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-//                .iterations(iterations)
                 .updater(Updater.NESTEROVS).momentum(0.9)
                 .activation(Activation.RELU)
                 .weightInit(WeightInit.XAVIER)
-                .learningRate(0.1).biasLearningRate(0.03)
+                .learningRate(0.03)
+//                .learningRateDecayPolicy(LearningRatePolicy.Score)
+                .lrPolicyDecayRate(0.01)
                 .regularization(true).l2(1e-4)
                 .list()
-                .layer(0, new ConvolutionLayer.Builder(7, 7).activation(Activation.LEAKYRELU).nOut(16).build()) //rectified linear units
+                .layer(0, new ConvolutionLayer.Builder(7, 7).activation(Activation.LEAKYRELU).nIn(num_channels).nOut(16).build()) //rectified linear units
                 .layer(1, new ConvolutionLayer.Builder(5, 5).nOut(32).activation(Activation.LEAKYRELU).build())
                 .layer(2, new SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX).kernelSize(2, 2).build())
                 .layer(3, new DropoutLayer.Builder(0.1).build())
@@ -125,50 +128,24 @@ public class LoadData {
                 .layer(12, new DenseLayer.Builder().nOut(1250).build())
                 .layer(13, new DropoutLayer.Builder(0.75).build())
                 .layer(14, new DenseLayer.Builder().nOut(1000).build())
-                .layer(15, new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nOut(data.getY().size(1)).build())
+                .layer(15, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                        .nOut(data.getY().size(1)).activation(Activation.IDENTITY).build())
                 .setInputType(InputType.convolutional(image_size, image_size, num_channels))
-//                .cnnInputSize(image_size, image_size, num_channels)
                 .backprop(true).pretrain(false)
                 .build();
 
         MultiLayerNetwork model = new MultiLayerNetwork(conf);
-        System.out.println(iterations);
-        DataSet dataSet = new DataSet(data.getX(), data.getY());
-        IteratorDataSetIterator iterator = new IteratorDataSetIterator(dataSet.iterator(), batch);
-
         model.init();
-        logger.warn("Train model");
 
-        model.setListeners(new ScoreIterationListener(iterations));
+        DataSet dataSet = new DataSet(data.getX(), data.getY());
+        DataSetIterator iterator1 = new IteratorDataSetIterator(dataSet.iterator(), batch);
+        logger.warn("Train model");
+        model.setListeners(new ScoreIterationListener(1));
         UtilSaveLoadMultiLayerNetwork uslmln = new UtilSaveLoadMultiLayerNetwork();
         for (int i = 0; i < epochs; i++) {
             logger.warn("Started epoch " + i);
-//            //Initialize the user interface backend
-            UIServer uiServer = UIServer.getInstance();
-
-            //Configure where the network information (gradients, score vs. time etc) is to be stored. Here: store in memory.
-            StatsStorage statsStorage = new InMemoryStatsStorage();         //Alternative: new FileStatsStorage(File), for saving and loading later
-
-            //Attach the StatsStorage instance to the UI: this allows the contents of the StatsStorage to be visualized
-            uiServer.attach(statsStorage);
-
-            //Then add the StatsListener to collect this information from the network, as it trains
-            model.setListeners(new StatsListener(statsStorage));
-            iterator = new IteratorDataSetIterator(dataSet.iterator(), batch);
-            model.fit(iterator);
+            model.fit(iterator1);
             uslmln.save(model, filename);
-            logger.warn("*** Completed epoch" + i + " ***");
-
-/*            logger.warn("Evaluate model....");
-            Evaluation eval = new Evaluation(outputNum);
-            while (iterator.hasNext()) {
-                DataSet ds = iterator.next();
-                INDArray output = model.output(ds.getFeatureMatrix(), false);
-                eval.eval(ds.getLabels(), output);
-                uslmln.save(model, filename);
-            }
-            logger.warn(eval.stats());*/
-            System.gc();
         }
         return model;
     }
