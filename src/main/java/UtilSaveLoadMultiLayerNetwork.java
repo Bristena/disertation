@@ -1,12 +1,9 @@
-import org.apache.log4j.Logger;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
 
 import java.io.File;
 
 public class UtilSaveLoadMultiLayerNetwork {
-    final static Logger logger = Logger.getLogger(UtilSaveLoadMultiLayerNetwork.class);
-
 
     public void save(MultiLayerNetwork net, String filename) throws Exception {
         net.init();

@@ -48,6 +48,11 @@ public class ExtractTrainingFaces {
         parts.add(leftEarTip);
     }
 
+    /**
+     * Aici asignez valori fiecarei parti a cainelui - ochiul drept, orchiul stang, nasul, urechile si punctele de deasupra capului
+     * @param pathToDog
+     * @return
+     */
     public DogParts loadDog(String pathToDog) {
         if (pathToDog.contains("dogImages")) {
             pathToDog = pathToDog.replace("dogImages", "dogParts");
@@ -80,24 +85,17 @@ public class ExtractTrainingFaces {
         return dogParts;
     }
 
+    /**
+     * Centrul capului = suma punctelor ocilor si a nasului impartit la 3
+     * @param partMap
+     * @return
+     */
     public INDArray getCenterPoint(Map<String, INDArray> partMap) {
         INDArray centerPoint = Nd4j.zeros(2);
         centerPoint = centerPoint.add(partMap.get("LEFT_EYE"));
         centerPoint = centerPoint.add(partMap.get("RIGHT_EYE"));
         centerPoint = centerPoint.add(partMap.get("NOSE"));
         centerPoint = centerPoint.div(3);
-
-        return centerPoint;
-    }
-
-    public INDArray getCenterPointAlt(Map<String, INDArray> partMap) {
-        INDArray centerPoint = Nd4j.zeros(2);
-        centerPoint = centerPoint.add(partMap.get("LEFT_EYE"));
-        centerPoint = centerPoint.add(partMap.get("RIGHT_EYE"));
-        centerPoint = centerPoint.div(2);
-
-        centerPoint = centerPoint.getColumn(1).add(partMap.get("NOSE").getColumn(1));
-        centerPoint = centerPoint.getColumn(1).div(1);
 
         return centerPoint;
     }
@@ -146,45 +144,6 @@ public class ExtractTrainingFaces {
         box.setBoxCorners(Nd4j.vstack(box_corners));
 
         return box;
-    }
-
-    public Box getRandomBox(Mat image, Map<String, INDArray> parts) {
-        Box faceBox = getFaceBox(parts);
-
-        while (true) {
-            java.util.Random random = new java.util.Random();
-            int rowsRandom = random.nextInt(image.rows());
-            int colsRandom = random.nextInt(image.cols());
-            INDArray center = Nd4j.create(new double[]{(double) rowsRandom, (double) colsRandom});
-            INDArray slope = Nd4j.create(new double[]{random.nextInt(100), random.nextInt(100)});
-            slope = slope.div(Nd4j.norm2(slope));
-            INDArray norm = Nd4j.create(new double[]{slope.getColumn(1).mul(-1).sumNumber().doubleValue(),
-                    slope.getColumn(0).sumNumber().doubleValue()});
-            int Low = 64;
-            int High = 128;
-            int dist = random.nextInt(High - Low) + Low;
-
-
-            if (!pointInBox(center, faceBox)) {
-                Box box = new Box();
-                INDArray[] box_corners = {
-                        center.add(slope.mul(dist)).add(norm.mul(dist)),
-                        center.add(slope.mul(dist)).sub(norm.mul(dist)),
-                        center.sub((slope.mul(dist)).sub(norm.mul(dist))),
-                        center.sub(slope.mul(dist)).add(norm.mul(dist)),
-                };
-                box.setInterEyeDist(dist);
-                box.setEyeSlope(slope);
-                box.setBoxCorners(Nd4j.vstack(box_corners));
-                return box;
-            }
-
-        }
-    }
-
-
-    public List<String> getFiles(String path) {
-        return readFromFile(path);
     }
 
     public List<KeyPoint> getKeypoints(Mat image, Box box) {
@@ -248,13 +207,5 @@ public class ExtractTrainingFaces {
             }
         }
         return matrice;
-    }
-
-    public List<String> getCompletePath(String path, List<String> paths) {
-        List<String> completePaths = new ArrayList<>();
-        for (String s : paths) {
-            completePaths.add(path + s);
-        }
-        return completePaths;
     }
 }

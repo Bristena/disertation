@@ -135,15 +135,6 @@ public class CropFaces {
         }
     }
 
-/*    public Mat rotate(Mat src, double angle) {
-        Mat dst = new Mat();
-
-        Point pt = new Point((int) (src.cols() / 2.0), (int) (src.rows() / 2.0));
-        Mat r = Imgproc.getRotationMatrix2D(pt, angle, 1.0);
-        Imgproc.warpAffine(src, dst, r, new Size(src.cols(), src.rows()));
-        return dst;
-    }*/
-
     public void rotate(Mat src, Mat dst, double angle) {
         if (src.dataAddr() != dst.dataAddr()) {
             src.copyTo(dst);

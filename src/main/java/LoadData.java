@@ -33,7 +33,10 @@ public class LoadData {
 
     private int image_size = 128;
     private int num_channels = 3;
-
+/**
+ * Incarc lista de imagini pe care i-o voi da retelei sa o invete
+ *  fac resize la imagini sa fie de 128x128x3
+ */
     public Data loadData(List<String> imageList) {
         logger.warn("loading image data");
         Data data = new Data();
@@ -100,6 +103,15 @@ public class LoadData {
         return data;
     }
 
+
+    /**
+     * Aici incerc sa creez reteaua neuronala care va fi antrenata cu imaginile procesate de     public Data loadData(List<String> imageList)
+
+     * @param data
+     * @param filename
+     * @return
+     * @throws Exception
+     */
     public MultiLayerNetwork trainConvNetwork(final Data data, String filename) throws Exception {
         int batch = 100;
         int epochs = 50;
